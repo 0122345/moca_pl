@@ -46,7 +46,9 @@ CREATE TABLE rides (
     dropoff_longitude NUMBER(11,8),
     fare_amount NUMBER(10,2),
     payment_method VARCHAR2(20) CHECK (payment_method IN ('nfc', 'momo', 'paypal', 'card', 'qr')),
-    status VARCHAR2(20) CHECK (status IN ('requested', 'accepted', 'active', 'completed', 'canceled')) DEFAULT 'requested',
+    -- added 'paid' to allow explicit paid state, and added updated_at for automatic timestamping
+    status VARCHAR2(20) CHECK (status IN ('requested', 'accepted', 'active', 'completed', 'canceled', 'paid')) DEFAULT 'requested',
+    updated_at TIMESTAMP,
     requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     started_at TIMESTAMP,
     completed_at TIMESTAMP,
@@ -166,6 +168,24 @@ CREATE INDEX idx_payments_success ON payments(is_successful);
 CREATE INDEX idx_tracking_driver ON tracking(driver_id);
 CREATE INDEX idx_tracking_ride ON tracking(ride_id);
 CREATE INDEX idx_tracking_timestamp ON tracking(timestamp);
+
+-- History table to store an immutable log of tracking updates (for the location update logging trigger)
+CREATE TABLE tracking_history (
+    history_id NUMBER PRIMARY KEY,
+    tracking_id NUMBER,
+    driver_id NUMBER NOT NULL,
+    ride_id NUMBER,
+    latitude NUMBER(10,8) NOT NULL,
+    longitude NUMBER(11,8) NOT NULL,
+    speed NUMBER(5,2) DEFAULT 0,
+    heading NUMBER(5,2),
+    logged_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (driver_id) REFERENCES drivers(driver_id),
+    FOREIGN KEY (ride_id) REFERENCES rides(ride_id)
+);
+
+CREATE SEQUENCE tracking_history_seq START WITH 9001 INCREMENT BY 1;
+
 
 -- =====================================================
 -- STEP 4: INSERT SAMPLE DATA
