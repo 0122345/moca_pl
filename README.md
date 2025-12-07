@@ -11,12 +11,12 @@
 
 ## 📋 Table of Contents
 
-1. [Database Schema Overview](#database-schema-overview)
-2. [Entity Relationship Diagram](#entity-relationship-diagram)
-3. [Table Definitions](#table-definitions)
-4. [Sample Data](#sample-data)
-5. [Window Functions - Business Analytics](#window-functions-business-analytics)
-6. [Advanced Queries](#advanced-queries)
+1. [Project Overview](#project-overview)
+2. [Key Challenges Addressed](#Key-Challenges-Addressed)
+3. [Core Features](#Core-Features)
+4. [Database Schema](#Database-Schema)
+5. [Innovation & Key Differentiators](#Innovation-&-Key-Differentiators)
+6. [LINKS](#LINKS)
 
 ---
 
@@ -186,18 +186,14 @@ Every component is designed with local market realities in mind:
 ## LINKS
 
 1. [DB Creation Process Doc](/db/documentation/database_creation.md)
-
-2. [ Database Schema Overview ](/db/scripts/db.schema.sql)
-3. [Entity Relationship Diagram](#entity-relationship-diagram)
-4. [Table Definitions](#table-definitions)
-5. [Sample Data](#sample-data)
-6. [Window Functions - Business Analytics](#window-functions-business-analytics)
-7. [Advanced Queries](#advanced-queries)
+2. [Database Schema Overview](/db/scripts/db.schema.sql)
+3. [Packages](/db/scripts/moca_packages.sql)
+4. [Procedures](/db/scripts/moca_Procedures.sql)
+5. [Cursors](/db/scripts/moca_cursors.sql)
+6. [Triggers](/db/scripts/moca_triggers.sql)
+7. [Screenshots](/screenshots/)
 
 ---
-
-
-
 
 ## Conclusion
 
