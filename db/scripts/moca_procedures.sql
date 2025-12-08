@@ -78,6 +78,8 @@ CREATE OR REPLACE PROCEDURE complete_ride(
 	v_per_km NUMBER := 300; -- per km
 	v_per_min NUMBER := 50; -- per minute
 	v_fare NUMBER;
+	v_dist NUMBER;
+	v_dur NUMBER;
 BEGIN
 	-- Update ride distances & timestamps
 	UPDATE rides
@@ -88,14 +90,14 @@ BEGIN
 	WHERE ride_id = p_ride_id
 	RETURNING driver_id INTO v_driver_id;
 
-	-- compute fare if we have metrics
-	SELECT distance_km, duration_minutes INTO p_distance_km, p_duration_minutes FROM rides WHERE ride_id = p_ride_id;
+	-- compute fare if we have metrics (read from table into local vars)
+	SELECT distance_km, duration_minutes INTO v_dist, v_dur FROM rides WHERE ride_id = p_ride_id;
 	v_fare := v_base;
-	IF p_distance_km IS NOT NULL THEN
-		v_fare := v_fare + (p_distance_km * v_per_km);
+	IF v_dist IS NOT NULL THEN
+		v_fare := v_fare + (v_dist * v_per_km);
 	END IF;
-	IF p_duration_minutes IS NOT NULL THEN
-		v_fare := v_fare + (p_duration_minutes * v_per_min);
+	IF v_dur IS NOT NULL THEN
+		v_fare := v_fare + (v_dur * v_per_min);
 	END IF;
 
 	UPDATE rides SET fare_amount = ROUND(v_fare,2), status = 'completed', updated_at = SYSTIMESTAMP WHERE ride_id = p_ride_id;

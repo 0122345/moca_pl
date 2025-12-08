@@ -5,6 +5,121 @@
 -- Date: 17 November 2025
 -- =====================================================
 
+-- Idempotent cleanup so the script can be re-run safely
+PROMPT Dropping existing objects (ignore errors if not present);
+
+-- Drop tables (children first) if they exist
+BEGIN
+  EXECUTE IMMEDIATE 'DROP TABLE driver_ratings CASCADE CONSTRAINTS';
+EXCEPTION
+  WHEN OTHERS THEN IF SQLCODE != -942 THEN RAISE; END IF; -- ORA-00942 table or view does not exist
+END;
+/
+BEGIN
+  EXECUTE IMMEDIATE 'DROP TABLE tracking CASCADE CONSTRAINTS';
+EXCEPTION
+  WHEN OTHERS THEN IF SQLCODE != -942 THEN RAISE; END IF;
+END;
+/
+BEGIN
+  EXECUTE IMMEDIATE 'DROP TABLE messages CASCADE CONSTRAINTS';
+EXCEPTION
+  WHEN OTHERS THEN IF SQLCODE != -942 THEN RAISE; END IF;
+END;
+/
+BEGIN
+  EXECUTE IMMEDIATE 'DROP TABLE payments CASCADE CONSTRAINTS';
+EXCEPTION
+  WHEN OTHERS THEN IF SQLCODE != -942 THEN RAISE; END IF;
+END;
+/
+BEGIN
+  EXECUTE IMMEDIATE 'DROP TABLE rides CASCADE CONSTRAINTS';
+EXCEPTION
+  WHEN OTHERS THEN IF SQLCODE != -942 THEN RAISE; END IF;
+END;
+/
+BEGIN
+  EXECUTE IMMEDIATE 'DROP TABLE drivers CASCADE CONSTRAINTS';
+EXCEPTION
+  WHEN OTHERS THEN IF SQLCODE != -942 THEN RAISE; END IF;
+END;
+/
+BEGIN
+  EXECUTE IMMEDIATE 'DROP TABLE ride_requests_log CASCADE CONSTRAINTS';
+EXCEPTION
+  WHEN OTHERS THEN IF SQLCODE != -942 THEN RAISE; END IF;
+END;
+/
+BEGIN
+  EXECUTE IMMEDIATE 'DROP TABLE tracking_history CASCADE CONSTRAINTS';
+EXCEPTION
+  WHEN OTHERS THEN IF SQLCODE != -942 THEN RAISE; END IF;
+END;
+/
+BEGIN
+  EXECUTE IMMEDIATE 'DROP TABLE users CASCADE CONSTRAINTS';
+EXCEPTION
+  WHEN OTHERS THEN IF SQLCODE != -942 THEN RAISE; END IF;
+END;
+/
+
+-- Drop sequences if they exist
+BEGIN
+  EXECUTE IMMEDIATE 'DROP SEQUENCE tracking_history_seq';
+EXCEPTION
+  WHEN OTHERS THEN IF SQLCODE != -2289 THEN RAISE; END IF; -- ORA-02289 sequence does not exist
+END;
+/
+BEGIN
+  EXECUTE IMMEDIATE 'DROP SEQUENCE log_seq';
+EXCEPTION
+  WHEN OTHERS THEN IF SQLCODE != -2289 THEN RAISE; END IF;
+END;
+/
+BEGIN
+  EXECUTE IMMEDIATE 'DROP SEQUENCE ratings_seq';
+EXCEPTION
+  WHEN OTHERS THEN IF SQLCODE != -2289 THEN RAISE; END IF;
+END;
+/
+BEGIN
+  EXECUTE IMMEDIATE 'DROP SEQUENCE tracking_seq';
+EXCEPTION
+  WHEN OTHERS THEN IF SQLCODE != -2289 THEN RAISE; END IF;
+END;
+/
+BEGIN
+  EXECUTE IMMEDIATE 'DROP SEQUENCE messages_seq';
+EXCEPTION
+  WHEN OTHERS THEN IF SQLCODE != -2289 THEN RAISE; END IF;
+END;
+/
+BEGIN
+  EXECUTE IMMEDIATE 'DROP SEQUENCE payments_seq';
+EXCEPTION
+  WHEN OTHERS THEN IF SQLCODE != -2289 THEN RAISE; END IF;
+END;
+/
+BEGIN
+  EXECUTE IMMEDIATE 'DROP SEQUENCE rides_seq';
+EXCEPTION
+  WHEN OTHERS THEN IF SQLCODE != -2289 THEN RAISE; END IF;
+END;
+/
+BEGIN
+  EXECUTE IMMEDIATE 'DROP SEQUENCE drivers_seq';
+EXCEPTION
+  WHEN OTHERS THEN IF SQLCODE != -2289 THEN RAISE; END IF;
+END;
+/
+BEGIN
+  EXECUTE IMMEDIATE 'DROP SEQUENCE users_seq';
+EXCEPTION
+  WHEN OTHERS THEN IF SQLCODE != -2289 THEN RAISE; END IF;
+END;
+/
+
 -- STEP 1: CREATE DATABASE SCHEMA
 -- =====================================================
 
@@ -47,7 +162,7 @@ CREATE TABLE rides (
     fare_amount NUMBER(10,2),
     payment_method VARCHAR2(20) CHECK (payment_method IN ('nfc', 'momo', 'paypal', 'card', 'qr')),
     -- added 'paid' to allow explicit paid state, and added updated_at for automatic timestamping
-    status VARCHAR2(20) CHECK (status IN ('requested', 'accepted', 'active', 'completed', 'canceled', 'paid')) DEFAULT 'requested',
+    status VARCHAR2(20) DEFAULT 'requested' CHECK (status IN ('requested', 'accepted', 'active', 'completed', 'canceled', 'paid')),
     updated_at TIMESTAMP,
     requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     started_at TIMESTAMP,
@@ -106,7 +221,7 @@ CREATE TABLE driver_ratings (
     driver_id NUMBER NOT NULL,
     rider_id NUMBER NOT NULL,
     rating NUMBER(1) CHECK (rating BETWEEN 1 AND 5) NOT NULL,
-    comment VARCHAR2(500),
+    rating_comment VARCHAR2(500),
     rated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (ride_id) REFERENCES rides(ride_id),
     FOREIGN KEY (driver_id) REFERENCES drivers(driver_id),
@@ -144,7 +259,8 @@ CREATE SEQUENCE log_seq START WITH 8001 INCREMENT BY 1;
 -- =====================================================
 
 -- Users indexes
-CREATE INDEX idx_users_email ON users(email);
+-- Skipped: users(email) is already indexed via the UNIQUE constraint on email
+-- CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_phone ON users(phone);
 CREATE INDEX idx_users_role ON users(role);
 
@@ -211,22 +327,38 @@ INSERT INTO drivers VALUES (drivers_seq.NEXTVAL, 1007, 'DL2023004', 'moto', 'RAD
 INSERT INTO drivers VALUES (drivers_seq.NEXTVAL, 1009, 'DL2023005', 'delivery', 'RAD345E', 4.6, 1, 34);
 
 -- Insert Rides (Last 6 months of data)
-INSERT INTO rides VALUES (rides_seq.NEXTVAL, 1001, 2001, 'KN 5 Ave, Kigali', 'KG 11 Ave, Kigali', -1.9441, 30.0619, -1.9506, 30.0944, 3500.00, 'momo', 'completed', TIMESTAMP '2024-06-15 08:30:00', TIMESTAMP '2024-06-15 08:32:00', TIMESTAMP '2024-06-15 08:47:00', 5.2, 15);
-INSERT INTO rides VALUES (rides_seq.NEXTVAL, 1002, 2002, 'Nyarugenge, Kigali', 'Kimironko, Kigali', -1.9500, 30.0588, -1.9536, 30.1044, 2500.00, 'card', 'completed', TIMESTAMP '2024-06-18 14:20:00', TIMESTAMP '2024-06-18 14:21:00', TIMESTAMP '2024-06-18 14:32:00', 4.1, 11);
-INSERT INTO rides VALUES (rides_seq.NEXTVAL, 1005, 2003, 'Remera, Kigali', 'Airport, Kigali', -1.9578, 30.1044, -1.9686, 30.1394, 4500.00, 'nfc', 'completed', TIMESTAMP '2024-07-02 06:15:00', TIMESTAMP '2024-07-02 06:16:00', TIMESTAMP '2024-07-02 06:35:00', 7.8, 19);
-INSERT INTO rides VALUES (rides_seq.NEXTVAL, 1001, 2004, 'Kimihurura, Kigali', 'Downtown Kigali', -1.9447, 30.0958, -1.9536, 30.0588, 2000.00, 'momo', 'completed', TIMESTAMP '2024-07-10 10:45:00', TIMESTAMP '2024-07-10 10:46:00', TIMESTAMP '2024-07-10 10:56:00', 3.2, 10);
-INSERT INTO rides VALUES (rides_seq.NEXTVAL, 1008, 2001, 'Gikondo, Kigali', 'Kacyiru, Kigali', -1.9833, 30.0747, -1.9447, 30.0958, 4000.00, 'qr', 'completed', TIMESTAMP '2024-07-22 16:30:00', TIMESTAMP '2024-07-22 16:32:00', TIMESTAMP '2024-07-22 16:52:00', 6.5, 20);
-INSERT INTO rides VALUES (rides_seq.NEXTVAL, 1002, 2002, 'Nyamirambo, Kigali', 'CBD Kigali', -1.9719, 30.0472, -1.9536, 30.0588, 1800.00, 'card', 'completed', TIMESTAMP '2024-08-05 12:00:00', TIMESTAMP '2024-08-05 12:01:00', TIMESTAMP '2024-08-05 12:11:00', 2.8, 10);
-INSERT INTO rides VALUES (rides_seq.NEXTVAL, 1005, 2003, 'Kicukiro, Kigali', 'Rebero, Kigali', -1.9833, 30.1044, -1.9578, 30.0906, 3200.00, 'momo', 'completed', TIMESTAMP '2024-08-14 18:20:00', TIMESTAMP '2024-08-14 18:22:00', TIMESTAMP '2024-08-14 18:38:00', 4.9, 16);
-INSERT INTO rides VALUES (rides_seq.NEXTVAL, 1010, 2004, 'Gisozi, Kigali', 'Muhima, Kigali', -1.9283, 30.0833, -1.9578, 30.0644, 2800.00, 'nfc', 'completed', TIMESTAMP '2024-09-02 09:15:00', TIMESTAMP '2024-09-02 09:16:00', TIMESTAMP '2024-09-02 09:28:00', 3.8, 12);
-INSERT INTO rides VALUES (rides_seq.NEXTVAL, 1001, 2001, 'Kagugu, Kigali', 'Kimironko Market', -1.9314, 30.1181, -1.9536, 30.1044, 2200.00, 'paypal', 'completed', TIMESTAMP '2024-09-18 15:45:00', TIMESTAMP '2024-09-18 15:46:00', TIMESTAMP '2024-09-18 15:56:00', 3.1, 10);
-INSERT INTO rides VALUES (rides_seq.NEXTVAL, 1008, 2005, 'Kanombe, Kigali', 'Nyabugogo', -1.9686, 30.1394, -1.9419, 30.0594, 5500.00, 'momo', 'completed', TIMESTAMP '2024-10-01 07:30:00', TIMESTAMP '2024-10-01 07:32:00', TIMESTAMP '2024-10-01 07:58:00', 9.2, 26);
-INSERT INTO rides VALUES (rides_seq.NEXTVAL, 1002, 2002, 'Kacyiru, Kigali', 'Gikondo Industrial', -1.9447, 30.0958, -1.9833, 30.0747, 3800.00, 'card', 'completed', TIMESTAMP '2024-10-12 11:20:00', TIMESTAMP '2024-10-12 11:21:00', TIMESTAMP '2024-10-12 11:40:00', 5.8, 19);
-INSERT INTO rides VALUES (rides_seq.NEXTVAL, 1005, 2003, 'CBD Kigali', 'Rebero Hill', -1.9536, 30.0588, -1.9578, 30.0906, 3500.00, 'qr', 'completed', TIMESTAMP '2024-10-25 13:00:00', TIMESTAMP '2024-10-25 13:02:00', TIMESTAMP '2024-10-25 13:20:00', 5.1, 18);
-INSERT INTO rides VALUES (rides_seq.NEXTVAL, 1010, 2004, 'Nyarutarama, Kigali', 'Kimihurura', -1.9369, 30.1133, -1.9447, 30.0958, 2400.00, 'momo', 'completed', TIMESTAMP '2024-11-03 08:45:00', TIMESTAMP '2024-11-03 08:46:00', TIMESTAMP '2024-11-03 08:58:00', 3.5, 12);
-INSERT INTO rides VALUES (rides_seq.NEXTVAL, 1001, 2001, 'Airport Road', 'City Center', -1.9686, 30.1394, -1.9536, 30.0588, 5000.00, 'nfc', 'completed', TIMESTAMP '2024-11-10 17:30:00', TIMESTAMP '2024-11-10 17:32:00', TIMESTAMP '2024-11-10 17:56:00', 8.1, 24);
-INSERT INTO rides VALUES (rides_seq.NEXTVAL, 1008, 2002, 'Kimironko, Kigali', 'Nyamirambo', -1.9536, 30.1044, -1.9719, 30.0472, 3000.00, 'card', 'active', TIMESTAMP '2024-11-17 10:15:00', TIMESTAMP '2024-11-17 10:16:00', NULL, NULL, NULL);
-INSERT INTO rides VALUES (rides_seq.NEXTVAL, 1002, 2003, 'Remera, Kigali', 'Kicukiro Center', -1.9578, 30.1044, -1.9833, 30.1044, 2600.00, 'momo', 'requested', TIMESTAMP '2024-11-17 10:25:00', NULL, NULL, NULL, NULL);
+INSERT INTO rides (ride_id, rider_id, driver_id, pickup_location, dropoff_location, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, fare_amount, payment_method, status, updated_at, requested_at, started_at, completed_at, distance_km, duration_minutes)
+VALUES (rides_seq.NEXTVAL, 1001, 2001, 'KN 5 Ave, Kigali', 'KG 11 Ave, Kigali', -1.9441, 30.0619, -1.9506, 30.0944, 3500.00, 'momo', 'completed', NULL, TIMESTAMP '2024-06-15 08:30:00', TIMESTAMP '2024-06-15 08:32:00', TIMESTAMP '2024-06-15 08:47:00', 5.2, 15);
+INSERT INTO rides (ride_id, rider_id, driver_id, pickup_location, dropoff_location, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, fare_amount, payment_method, status, updated_at, requested_at, started_at, completed_at, distance_km, duration_minutes)
+VALUES (rides_seq.NEXTVAL, 1002, 2002, 'Nyarugenge, Kigali', 'Kimironko, Kigali', -1.9500, 30.0588, -1.9536, 30.1044, 2500.00, 'card', 'completed', NULL, TIMESTAMP '2024-06-18 14:20:00', TIMESTAMP '2024-06-18 14:21:00', TIMESTAMP '2024-06-18 14:32:00', 4.1, 11);
+INSERT INTO rides (ride_id, rider_id, driver_id, pickup_location, dropoff_location, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, fare_amount, payment_method, status, updated_at, requested_at, started_at, completed_at, distance_km, duration_minutes)
+VALUES (rides_seq.NEXTVAL, 1005, 2003, 'Remera, Kigali', 'Airport, Kigali', -1.9578, 30.1044, -1.9686, 30.1394, 4500.00, 'nfc', 'completed', NULL, TIMESTAMP '2024-07-02 06:15:00', TIMESTAMP '2024-07-02 06:16:00', TIMESTAMP '2024-07-02 06:35:00', 7.8, 19);
+INSERT INTO rides (ride_id, rider_id, driver_id, pickup_location, dropoff_location, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, fare_amount, payment_method, status, updated_at, requested_at, started_at, completed_at, distance_km, duration_minutes)
+VALUES (rides_seq.NEXTVAL, 1001, 2004, 'Kimihurura, Kigali', 'Downtown Kigali', -1.9447, 30.0958, -1.9536, 30.0588, 2000.00, 'momo', 'completed', NULL, TIMESTAMP '2024-07-10 10:45:00', TIMESTAMP '2024-07-10 10:46:00', TIMESTAMP '2024-07-10 10:56:00', 3.2, 10);
+INSERT INTO rides (ride_id, rider_id, driver_id, pickup_location, dropoff_location, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, fare_amount, payment_method, status, updated_at, requested_at, started_at, completed_at, distance_km, duration_minutes)
+VALUES (rides_seq.NEXTVAL, 1008, 2001, 'Gikondo, Kigali', 'Kacyiru, Kigali', -1.9833, 30.0747, -1.9447, 30.0958, 4000.00, 'qr', 'completed', NULL, TIMESTAMP '2024-07-22 16:30:00', TIMESTAMP '2024-07-22 16:32:00', TIMESTAMP '2024-07-22 16:52:00', 6.5, 20);
+INSERT INTO rides (ride_id, rider_id, driver_id, pickup_location, dropoff_location, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, fare_amount, payment_method, status, updated_at, requested_at, started_at, completed_at, distance_km, duration_minutes)
+VALUES (rides_seq.NEXTVAL, 1002, 2002, 'Nyamirambo, Kigali', 'CBD Kigali', -1.9719, 30.0472, -1.9536, 30.0588, 1800.00, 'card', 'completed', NULL, TIMESTAMP '2024-08-05 12:00:00', TIMESTAMP '2024-08-05 12:01:00', TIMESTAMP '2024-08-05 12:11:00', 2.8, 10);
+INSERT INTO rides (ride_id, rider_id, driver_id, pickup_location, dropoff_location, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, fare_amount, payment_method, status, updated_at, requested_at, started_at, completed_at, distance_km, duration_minutes)
+VALUES (rides_seq.NEXTVAL, 1005, 2003, 'Kicukiro, Kigali', 'Rebero, Kigali', -1.9833, 30.1044, -1.9578, 30.0906, 3200.00, 'momo', 'completed', NULL, TIMESTAMP '2024-08-14 18:20:00', TIMESTAMP '2024-08-14 18:22:00', TIMESTAMP '2024-08-14 18:38:00', 4.9, 16);
+INSERT INTO rides (ride_id, rider_id, driver_id, pickup_location, dropoff_location, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, fare_amount, payment_method, status, updated_at, requested_at, started_at, completed_at, distance_km, duration_minutes)
+VALUES (rides_seq.NEXTVAL, 1010, 2004, 'Gisozi, Kigali', 'Muhima, Kigali', -1.9283, 30.0833, -1.9578, 30.0644, 2800.00, 'nfc', 'completed', NULL, TIMESTAMP '2024-09-02 09:15:00', TIMESTAMP '2024-09-02 09:16:00', TIMESTAMP '2024-09-02 09:28:00', 3.8, 12);
+INSERT INTO rides (ride_id, rider_id, driver_id, pickup_location, dropoff_location, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, fare_amount, payment_method, status, updated_at, requested_at, started_at, completed_at, distance_km, duration_minutes)
+VALUES (rides_seq.NEXTVAL, 1001, 2001, 'Kagugu, Kigali', 'Kimironko Market', -1.9314, 30.1181, -1.9536, 30.1044, 2200.00, 'paypal', 'completed', NULL, TIMESTAMP '2024-09-18 15:45:00', TIMESTAMP '2024-09-18 15:46:00', TIMESTAMP '2024-09-18 15:56:00', 3.1, 10);
+INSERT INTO rides (ride_id, rider_id, driver_id, pickup_location, dropoff_location, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, fare_amount, payment_method, status, updated_at, requested_at, started_at, completed_at, distance_km, duration_minutes)
+VALUES (rides_seq.NEXTVAL, 1008, 2005, 'Kanombe, Kigali', 'Nyabugogo', -1.9686, 30.1394, -1.9419, 30.0594, 5500.00, 'momo', 'completed', NULL, TIMESTAMP '2024-10-01 07:30:00', TIMESTAMP '2024-10-01 07:32:00', TIMESTAMP '2024-10-01 07:58:00', 9.2, 26);
+INSERT INTO rides (ride_id, rider_id, driver_id, pickup_location, dropoff_location, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, fare_amount, payment_method, status, updated_at, requested_at, started_at, completed_at, distance_km, duration_minutes)
+VALUES (rides_seq.NEXTVAL, 1002, 2002, 'Kacyiru, Kigali', 'Gikondo Industrial', -1.9447, 30.0958, -1.9833, 30.0747, 3800.00, 'card', 'completed', NULL, TIMESTAMP '2024-10-12 11:20:00', TIMESTAMP '2024-10-12 11:21:00', TIMESTAMP '2024-10-12 11:40:00', 5.8, 19);
+INSERT INTO rides (ride_id, rider_id, driver_id, pickup_location, dropoff_location, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, fare_amount, payment_method, status, updated_at, requested_at, started_at, completed_at, distance_km, duration_minutes)
+VALUES (rides_seq.NEXTVAL, 1005, 2003, 'CBD Kigali', 'Rebero Hill', -1.9536, 30.0588, -1.9578, 30.0906, 3500.00, 'qr', 'completed', NULL, TIMESTAMP '2024-10-25 13:00:00', TIMESTAMP '2024-10-25 13:02:00', TIMESTAMP '2024-10-25 13:20:00', 5.1, 18);
+INSERT INTO rides (ride_id, rider_id, driver_id, pickup_location, dropoff_location, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, fare_amount, payment_method, status, updated_at, requested_at, started_at, completed_at, distance_km, duration_minutes)
+VALUES (rides_seq.NEXTVAL, 1010, 2004, 'Nyarutarama, Kigali', 'Kimihurura', -1.9369, 30.1133, -1.9447, 30.0958, 2400.00, 'momo', 'completed', NULL, TIMESTAMP '2024-11-03 08:45:00', TIMESTAMP '2024-11-03 08:46:00', TIMESTAMP '2024-11-03 08:58:00', 3.5, 12);
+INSERT INTO rides (ride_id, rider_id, driver_id, pickup_location, dropoff_location, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, fare_amount, payment_method, status, updated_at, requested_at, started_at, completed_at, distance_km, duration_minutes)
+VALUES (rides_seq.NEXTVAL, 1001, 2001, 'Airport Road', 'City Center', -1.9686, 30.1394, -1.9536, 30.0588, 5000.00, 'nfc', 'completed', NULL, TIMESTAMP '2024-11-10 17:30:00', TIMESTAMP '2024-11-10 17:32:00', TIMESTAMP '2024-11-10 17:56:00', 8.1, 24);
+INSERT INTO rides (ride_id, rider_id, driver_id, pickup_location, dropoff_location, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, fare_amount, payment_method, status, updated_at, requested_at, started_at, completed_at, distance_km, duration_minutes)
+VALUES (rides_seq.NEXTVAL, 1008, 2002, 'Kimironko, Kigali', 'Nyamirambo', -1.9536, 30.1044, -1.9719, 30.0472, 3000.00, 'card', 'active', NULL, TIMESTAMP '2024-11-17 10:15:00', TIMESTAMP '2024-11-17 10:16:00', NULL, NULL, NULL);
+INSERT INTO rides (ride_id, rider_id, driver_id, pickup_location, dropoff_location, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, fare_amount, payment_method, status, updated_at, requested_at, started_at, completed_at, distance_km, duration_minutes)
+VALUES (rides_seq.NEXTVAL, 1002, 2003, 'Remera, Kigali', 'Kicukiro Center', -1.9578, 30.1044, -1.9833, 30.1044, 2600.00, 'momo', 'requested', NULL, TIMESTAMP '2024-11-17 10:25:00', NULL, NULL, NULL, NULL);
 
 -- Insert Payments
 INSERT INTO payments VALUES (payments_seq.NEXTVAL, 3001, 3500.00, 'momo', 'MOMO2024061512345', 1, TIMESTAMP '2024-06-15 08:47:30', 'MTN Mobile Money');
