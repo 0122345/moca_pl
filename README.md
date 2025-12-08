@@ -191,7 +191,8 @@ Every component is designed with local market realities in mind:
 4. [Procedures](/db/scripts/moca_Procedures.sql)
 5. [Cursors](/db/scripts/moca_cursors.sql)
 6. [Triggers](/db/scripts/moca_triggers.sql)
-7. [Screenshots](/screenshots/)
+7. [Docker documentation](/documentation/dockerising_moca.md)
+8. [Screenshots](/screenshots/)
 
 ---
 

@@ -1,10 +1,10 @@
 #🧾Oracle Database: PDB Management
 
 Environment
-- Oracle Database 26c Free Edition running in Docker (host: Windows 11)
+- Oracle Database 26ai Free Edition running in Docker (host: Windows 11)
 
 Overview
-This repository documents a hands-on lab for creating, managing, and deleting Oracle pluggable databases (PDBs) using Oracle 26c running inside Docker. The exercises demonstrate PDB creation, verification, and cleanup. Screenshots from the lab are included in the `screenshots/db/db_creation` folder.
+This repository documents a hands-on lab for creating, managing, and deleting Oracle pluggable databases (PDBs) using Oracle 26ai running inside Docker. The exercises demonstrate PDB creation, verification, and cleanup. Screenshots from the lab are included in the `screenshots/db/db_creation` folder.
 
 ## Key artifacts
 - Created PDB: `mon_27438_fiacre_moca_db`
@@ -136,7 +136,7 @@ Role `SYSDBA`
 
 <b>Reproducibility checklist</b>
 - Ensure Docker is installed and running on the host.
-- Use an Oracle 26c Free image compatible with your host OS.
+- Use an Oracle 26ai Free image compatible with your host OS.
 - Confirm the container has adequate memory and disk for Oracle.
 - Adjust file name conversion paths when cloning or creating PDBs.
 
