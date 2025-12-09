@@ -1,0 +1,29 @@
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: moca-oracle
+    ports:
+      - "1522:1522"  # Oracle listener
+      - "5500:5500"  # EM Express (if available)
+    environment:
+      - ORACLE_PASSWORD=Oracle123
+      - APP_USER=fia_admin
+      - APP_USER_PASSWORD=fiacre
+      - ORACLE_DATABASE=FREEPDB1
+      - ORACLE_ALLOW_REMOTE=true
+      # Optional memory tuning examples (uncomment and set if needed)
+      # - INIT_SGA_SIZE=1G
+      # - INIT_PGA_SIZE=512M
+    volumes:
+      - oracle-data:/opt/oracle/oradata  # persistent database files
+      - ./init:/container-entrypoint-initdb.d:ro  # init scripts run on first startup
+      - ../../db/scripts:/opt/moca/db/scripts:ro  # your SQL scripts
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'select 1 from dual;' | sqlplus -s / as sysdba > /dev/null 2>&1"]
+      interval: 15s
+      timeout: 10s
+      retries: 40
+
+volumes:
+  oracle-data:
+    name: moca-oracle-data
