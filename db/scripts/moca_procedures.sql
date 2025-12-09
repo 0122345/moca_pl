@@ -13,7 +13,19 @@ CREATE OR REPLACE PROCEDURE request_ride(
 BEGIN
 	p_ride_id := rides_seq.NEXTVAL;
 	INSERT INTO rides (ride_id, rider_id, driver_id, pickup_location, dropoff_location, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, status, requested_at)
-	VALUES (p_ride_id, p_rider_id, NULL, NULL, NULL, p_pickup_lat, p_pickup_lng, p_drop_lat, p_drop_lng, 'requested', SYSTIMESTAMP);
+	VALUES (
+		p_ride_id,
+		p_rider_id,
+		NULL,
+		'('||p_pickup_lat||','||p_pickup_lng||')',
+		'('||p_drop_lat||','||p_drop_lng||')',
+		p_pickup_lat,
+		p_pickup_lng,
+		p_drop_lat,
+		p_drop_lng,
+		'requested',
+		SYSTIMESTAMP
+	);
 
 	-- return up to 5 currently available drivers (simple selection — true geospatial matching belongs in driver_mgmt_pkg)
 	OPEN p_available_drivers FOR
