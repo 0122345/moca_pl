@@ -1,0 +1,6 @@
+﻿"driver_id","user_id","license_no","vehicle_type","vehicle_plate","rating","is_available","total_rides"
+"2001","1003","DL2023001","car","RAD123A","4.5","1","45"
+"2002","1004","DL2023002","moto","RAD456B","4.8","1","120"
+"2003","1006","DL2023003","car","RAD789C","4.2","1","67"
+"2004","1007","DL2023004","moto","RAD012D","4.9","1","89"
+"2005","1009","DL2023005","delivery","RAD345E","4.6","1","34"

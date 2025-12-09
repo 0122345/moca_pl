@@ -1,0 +1,6 @@
+﻿"message_id","sender_id","receiver_id","ride_id","message_body","is_read","sent_at"
+"5001","1001","1003","3001","I am at the main entrance","1","2024-06-15 08:31:00"
+"5002","1003","1001","3001","I can see you, arriving in 1 minute","1","2024-06-15 08:31:30"
+"5003","1002","1004","3002","Please use the back gate","1","2024-06-18 14:21:15"
+"5004","1005","1006","3003","On my way to airport, heavy traffic","1","2024-07-02 06:20:00"
+"5005","1008","1003","3005","Can you wait 2 minutes? Just finishing payment","1","2024-07-22 16:31:00"
